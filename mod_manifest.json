@@ -1,0 +1,11 @@
+{
+  "id": "DamageByRoundOverlay",
+  "name": "Damage By Round Overlay",
+  "author": "Codex for Canal",
+  "description": "Shows how much damage each player dealt in each round of combat.",
+  "version": "0.1.0",
+  "has_pck": false,
+  "has_dll": true,
+  "dependencies": [],
+  "affects_gameplay": false
+}
