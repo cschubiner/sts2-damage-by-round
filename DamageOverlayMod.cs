@@ -9,6 +9,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
+using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
@@ -95,6 +96,62 @@ public static class DamageOverlayMod
         }
     }
 
+    [HarmonyPatch(typeof(PoisonPower), nameof(PoisonPower.AfterSideTurnStart))]
+    private static class PoisonPowerPatch
+    {
+        private static void Prefix(PoisonPower __instance, CombatSide side, out DeferredPowerDamageState __state)
+        {
+            __state = DeferredPowerDamageState.Capture(__instance.Owner, __instance.Applier?.Player, side == __instance.Owner.Side);
+        }
+
+        private static void Postfix(PoisonPower __instance, DeferredPowerDamageState __state)
+        {
+            __state.Commit(__instance.Owner);
+        }
+    }
+
+    [HarmonyPatch(typeof(DoomPower), nameof(DoomPower.BeforeTurnEnd))]
+    private static class DoomPowerPatch
+    {
+        private static void Prefix(DoomPower __instance, CombatSide side, out DeferredPowerDamageState __state)
+        {
+            var shouldTrigger = side == __instance.Owner.Side && !__instance.Owner.IsDead && __instance.IsOwnerDoomed();
+            __state = DeferredPowerDamageState.Capture(__instance.Owner, __instance.Applier?.Player, shouldTrigger);
+        }
+
+        private static void Postfix(DoomPower __instance, DeferredPowerDamageState __state)
+        {
+            __state.Commit(__instance.Owner);
+        }
+    }
+
+}
+
+internal readonly record struct DeferredPowerDamageState(Player? Player, int StartingHp, bool ShouldTrack)
+{
+    public static DeferredPowerDamageState Capture(Creature owner, Player? player, bool shouldTrack)
+    {
+        if (!shouldTrack || player == null || !owner.IsEnemy)
+        {
+            return new DeferredPowerDamageState(null, 0, false);
+        }
+
+        return new DeferredPowerDamageState(player, owner.CurrentHp, true);
+    }
+
+    public void Commit(Creature owner)
+    {
+        if (!ShouldTrack || Player == null)
+        {
+            return;
+        }
+
+        var hpLost = Math.Max(StartingHp - owner.CurrentHp, 0);
+        if (hpLost > 0)
+        {
+            DamageRunTracker.RecordAttributedDamage(Player.NetId, hpLost);
+        }
+    }
 }
 
 internal static class DamageRunTracker
@@ -234,7 +291,17 @@ internal static class DamageRunTracker
             return;
         }
 
-        CurrentCombatTotals[player.NetId] = CurrentCombatTotals.GetValueOrDefault(player.NetId) + result.TotalDamage;
+        RecordAttributedDamage(player.NetId, result.TotalDamage);
+    }
+
+    public static void RecordAttributedDamage(ulong playerNetId, int amount)
+    {
+        if (amount <= 0)
+        {
+            return;
+        }
+
+        CurrentCombatTotals[playerNetId] = CurrentCombatTotals.GetValueOrDefault(playerNetId) + amount;
     }
 
     private static RunState? TryGetRunState()
