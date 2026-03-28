@@ -1,5 +1,11 @@
 # STS2 Damage By Round Overlay
 
+Slay the Spire 2 co-op does not do a great job of telling you how much each player actually contributed in a fight.
+
+That is the whole point of this mod.
+
+It adds a simple overlay so you can see how you are doing compared to the other players in your co-op run, instead of guessing after every combat.
+
 A small Slay the Spire 2 overlay mod for co-op that shows how much damage each player contributed.
 
 It displays:
