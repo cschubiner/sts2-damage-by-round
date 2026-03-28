@@ -1,5 +1,9 @@
 # STS2 Damage By Round Overlay
 
+<img width="625" height="430" alt="image" src="https://github.com/user-attachments/assets/60a989cd-ef8e-4f86-be7c-6ff9871a82a8" />
+
+<img width="2032" height="1220" alt="image" src="https://github.com/user-attachments/assets/45b5d7c6-1702-4573-835c-10fb3c9b5db4" />
+
 Slay the Spire 2 co-op does not do a great job of telling you how much each player actually contributed in a fight.
 
 That is the whole point of this mod.
